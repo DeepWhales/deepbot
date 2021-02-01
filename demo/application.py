@@ -28,14 +28,15 @@ import threading
 
 from datetime import datetime
 
-
+from utils import intent_str_dic, preprocess
 
 ###############
 # 피드백 메모리 #
 ###############
 # feedback = pd.DataFrame(columns=['utterance, intent, label'])
-feedback = {'id':[], 'utterance':[], 'intent':[], 'label':[], 'score':[]};
+feedback = {'id':[], 'text':[], 'utterance':[], 'intent':[], 'label':[], 'score':[]}
 id_global = ''
+text_global = ''
 utterence_global = ''
 intent_global = ''
 label_global = ''
@@ -60,6 +61,7 @@ def feedback_write():
     #     data_loaded = pickle.load(fr)
 
     feedback['id'].clear()
+    feedback['text'].clear()
     feedback['utterance'].clear()
     feedback['intent'].clear()
     feedback['label'].clear()
@@ -73,44 +75,44 @@ def feedback_write():
 ########################
 # intent to tntent_str #
 ########################
-intent_str_dic = {'elevator-on'                     : '엘리베이터 호출',
-                'gas-off'                       : '가스 밸브 OFF',
-                'gas-on'                        : '가스 밸브 ON',
-
-                'heat-cold-state'                     : '난방 COLD-STATE',
-                'heat-down'                     : '난방 DOWN',
-                'heat-hot-state'                      : '난방 HOT-STATE',
-                'heat-off'                      : '난방 OFF',
-                'heat-on'                       : '난방 ON',
-                'heat-reservation-cancel'       : '난방 예약 취소',
-                'heat-reservation-off-after'    : '난방 OFF 예약',
-                'heat-reservation-off-at'       : '난방 OFF 예약',
-                'heat-reservation-on-after'     : '난방 ON 예약',
-                'heat-reservation-on-at'        : '난방 ON 예약',
-                'heat-reservation-state'        : '난방 예약 STATE',
-                'heat-state'                    : '난방 STATE',
-                'heat-up'                       : '난방 UP',
-
-                'light-on'                      : '조명 ON',
-                'light-off'                     : '조명 OFF',
-
-                'parking-location'              : '주차 위치',
-
-                'security-off'                  : '방범 OFF',
-                'security-on'                   : '방범 ON',
-
-                'vent-down'                     : '환기 DOWN',
-                'vent-off'                      : '환기 OFF',
-                'vent-on-high'  : '환기 ON',
-                'vent-on-low'   : '환기 ON',
-                'vent-on-mid'   : '환기 ON',
-                'vent-state'    : '환기 STATE',
-                'vent-up'       : '환기 UP',
-
-                'weather'           : '날씨',
-                'greeting'          : '인사',
-                'search'            : '검색',
-              }
+# intent_str_dic = {'elevator-on'                     : '엘리베이터 호출',
+#                 'gas-off'                       : '가스 밸브 OFF',
+#                 'gas-on'                        : '가스 밸브 ON',
+#
+#                 'heat-cold-state'                     : '난방 COLD-STATE',
+#                 'heat-down'                     : '난방 DOWN',
+#                 'heat-hot-state'                      : '난방 HOT-STATE',
+#                 'heat-off'                      : '난방 OFF',
+#                 'heat-on'                       : '난방 ON',
+#                 'heat-reservation-cancel'       : '난방 예약 취소',
+#                 'heat-reservation-off-after'    : '난방 OFF 예약',
+#                 'heat-reservation-off-at'       : '난방 OFF 예약',
+#                 'heat-reservation-on-after'     : '난방 ON 예약',
+#                 'heat-reservation-on-at'        : '난방 ON 예약',
+#                 'heat-reservation-state'        : '난방 예약 STATE',
+#                 'heat-state'                    : '난방 STATE',
+#                 'heat-up'                       : '난방 UP',
+#
+#                 'light-on'                      : '조명 ON',
+#                 'light-off'                     : '조명 OFF',
+#
+#                 'parking-location'              : '주차 위치',
+#
+#                 'security-off'                  : '방범 OFF',
+#                 'security-on'                   : '방범 ON',
+#
+#                 'vent-down'                     : '환기 DOWN',
+#                 'vent-off'                      : '환기 OFF',
+#                 'vent-on-high'  : '환기 ON',
+#                 'vent-on-low'   : '환기 ON',
+#                 'vent-on-mid'   : '환기 ON',
+#                 'vent-state'    : '환기 STATE',
+#                 'vent-up'       : '환기 UP',
+#
+#                 'weather'           : '날씨',
+#                 'greeting'          : '인사',
+#                 'search'            : '검색',
+#               }
 
 
 ####################################
@@ -189,9 +191,10 @@ def request_chat(uid: str, text: str) -> dict:
     # dialogue_cache[uid] = scenario_manager.apply_scenario(intent, entity, text)
 
     # BERT 인텐트
-    utterance = text
+    # utterance =
+    utterence = preprocess(text)
     max_seq_len = 50
-    inputs = tokenizer.encode_plus(utterance,
+    inputs = tokenizer.encode_plus(utterence,
             None,
             pad_to_max_length=True,
             add_special_tokens=True,
@@ -259,7 +262,7 @@ def request_chat(uid: str, text: str) -> dict:
 
     # feedback = {: [], 'intent': [], 'label': [], 'score': []};
     id_global = uid
-    utterence_global = text
+    utterence_global = utterence
     intent_global = intent
     label_global = ''
     score_global = outputs.logits.squeeze()
@@ -268,6 +271,7 @@ def request_chat(uid: str, text: str) -> dict:
     # feedback['intent'] = intent_global
     # feedback['score'] = score_global
     feedback['id'].append(id_global)
+    feedback['text'].append(text_global)
     feedback['utterance'].append(utterence_global)
     feedback['intent'].append(intent_global)
     feedback['score'].append(score_global)
