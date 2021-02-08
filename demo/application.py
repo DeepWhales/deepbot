@@ -126,14 +126,17 @@ device = 'cpu'
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 model_class = BertForSequenceClassification
 
-with open('indx2label.pkl', 'rb') as fr:
-    indx2label = pickle.load(fr)
+# with open('indx2label.pkl', 'rb') as fr:
+#     indx2label = pickle.load(fr)
 
 ####################
 ## 2. 모델 불러오기 ##
 ####################
 model = model_class.from_pretrained(model_dir)
 model.to(device)
+
+indx2label = model.config.id2label
+
 
 # 데이터 관리
 # dataset = Dataset()
@@ -244,6 +247,7 @@ def request_chat(uid: str, text: str) -> dict:
     output_topk5 = outputs.logits.topk(3)
 
     intent1 = indx2label[output_topk5.indices[0][0].item()]
+    utils
     # intent2 = indx2label[output_topk5.indices[0][1].item()]
     # intent3 = indx2label[output_topk5.indices[0][2].item()]
     # intent = intent1 + ', ' + intent2 + ', ' + intent3
@@ -299,7 +303,6 @@ def request_correct(uid: str) -> dict:
 
     feedback_len = len(feedback['label'])
     feedback['label'][feedback_len - 1] = 1
-
 
     text = '평가해주셔서 감사합니다.'
     dialogue_cache = {'input': text}

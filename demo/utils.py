@@ -1,8 +1,13 @@
 import random
 import logging
 
+logger = logging.getLogger(__name__)
+
 import torch
 import numpy as np
+# from seqeval.metrics import precision_score, recall_score, f1_score, classification_report  # 개체명 인식 스코어
+from seqeval.metrics import precision_score, recall_score, f1_score  # 개체명 인식 스코어
+from sklearn.metrics import classification_report
 
 from transformers import AutoTokenizer
 
@@ -15,7 +20,7 @@ import json
 import urllib
 from bs4 import BeautifulSoup
 
-
+import pandas as pd
 
 #################
 ## NER 모델 호출 ##
@@ -78,18 +83,34 @@ def pickle_read(file_name):
         user_loaded = pickle.load(fr)
     return user_loaded
 
-def get_label():
-    index2label=pickle_read('index2label.pickle')
-    labels = list(index2label.keys())
+def get_label(data_path):
+
+    df_data = pd.read_excel(data_path, engine="openpyxl")
+    df_data1 = df_data.loc[:, ['target_2', 'target']]
+    df_data2 = df_data1.drop_duplicates()
+
+    indx2label = {}
+
+    for index, row in df_data2.iterrows():
+        # indx2label[row['target_2']] = row['target']
+        indx2label[row['target']] = row['target_2']
+
+    # save data
+    # with open('indx2label.pkl', 'wb') as fw:
+    #     pickle.dump(indx2label, fw)
+    #
+    # index2label=pickle_read('index2label.pickle')
+    # labels = list(indx2label.keys())
+    labels = list(indx2label.values())
     return labels
 
-def get_index2label():
-    index2label = pickle_read('index2label.pickle')
-    return index2label
-
-def get_label2index():
-    label2index = pickle_read('label2index.pickle')
-    return label2index
+# def get_index2label():
+#     index2label = pickle_read('index2label.pickle')
+#     return index2label
+#
+# def get_label2index():
+#     label2index = pickle_read('label2index.pickle')
+#     return label2index
 
 def load_tokenizer(model_name_or_path):
     return AutoTokenizer.from_pretrained(model_name_or_path)
@@ -106,9 +127,16 @@ def set_seed(seed, no_cuda):
     if not no_cuda and torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-def compute_metrics(preds, labels):
+def compute_metrics(preds, labels, class_labels=None):
     assert len(preds) == len(labels)
-    return acc_score(preds, labels)
+    # return acc_score(preds, labels)
+    if class_labels != None:
+        result = f1_pre_rec(preds, labels, class_labels)  # Classification
+    else:
+        result = f1_pre_rec(preds, labels) # NER
+
+
+    return result
 
 def simple_accuracy(preds, labels):
     return (preds == labels).mean()
@@ -117,6 +145,22 @@ def acc_score(preds, labels):
     return {
         "acc": simple_accuracy(preds, labels),
     }
+
+# NER metrics
+def f1_pre_rec(preds, labels):
+    return {
+        "precision": precision_score(labels, preds, suffix=True),
+        "recall": recall_score(labels, preds, suffix=True),
+        "f1": f1_score(labels, preds, suffix=True)
+    }
+
+# Classification metrics
+# https://datascienceschool.net/03%20machine%20learning/09.04%20%EB%B6%84%EB%A5%98%20%EC%84%B1%EB%8A%A5%ED%8F%89%EA%B0%80.html
+def f1_pre_rec(preds, labels, class_labels):
+    target_names = class_labels
+    result = classification_report(labels, preds, target_names = target_names)
+    return result
+
 
 # https://github.com/kmounlp/NER/blob/master/NER%20Guideline%20(ver%201.0).pdf
 # 가. 개체명(ENAMEX): 개체명은 주로 고유명사에 해당하며 아래와 같은 형태가 있다.
@@ -204,9 +248,24 @@ def preprocess(utterance):
 
 
 if __name__ == '__main__':
-    print(preprocess('우리집 어때?'))
-    print(preprocess('내일 오전에 보일러 켜줘'))
-    print(preprocess('내일 오전 10시 10분에 보일러 켜줘'))
-    print(preprocess('수요일에 보일러 켜줘'))
-    print(preprocess('문제인이 누구야?'))
-    print(preprocess('방법 켜줘'))
+    # print(preprocess('우리집 어때?'))
+    # print(preprocess('내일 오전에 보일러 켜줘'))
+    # print(preprocess('내일 오전 10시 10분에 보일러 켜줘'))
+    # print(preprocess('수요일에 보일러 켜줘'))
+    # print(preprocess('문제인이 누구야?'))
+    # print(preprocess('방법 켜줘'))
+
+    results = {
+        # "loss": eval_loss
+    }
+
+    labels = [0, 0, 1, 1, 2, 2, 2]
+    preds = [0, 0, 1, 2, 2, 2, 1]
+    target_names = ['class 0', 'class 1', 'class 2']
+    result = f1_pre_rec(preds, labels, target_names)
+    print(result)
+    # results.update(result)
+
+    # logger.info("***** Eval results *****")
+    # for key in sorted(results.keys()):
+    #     logger.info("  %s = %s", key, str(results[key]))
