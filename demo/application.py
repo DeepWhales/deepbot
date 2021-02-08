@@ -247,7 +247,6 @@ def request_chat(uid: str, text: str) -> dict:
     output_topk5 = outputs.logits.topk(3)
 
     intent1 = indx2label[output_topk5.indices[0][0].item()]
-    utils
     # intent2 = indx2label[output_topk5.indices[0][1].item()]
     # intent3 = indx2label[output_topk5.indices[0][2].item()]
     # intent = intent1 + ', ' + intent2 + ', ' + intent3

@@ -74,6 +74,7 @@ intent_str_dic = {'elevator-on'                     : '엘리베이터 호출',
                 'weather'           : '날씨',
                 'greeting'          : '인사',
                 'search'            : '검색',
+                'chat'              : '잡담',
               }
 
 
