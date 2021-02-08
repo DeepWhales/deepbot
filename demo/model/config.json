@@ -41,7 +41,8 @@
     "27": "LABEL_27",
     "28": "LABEL_28",
     "29": "LABEL_29",
-    "30": "LABEL_30"
+    "30": "LABEL_30",
+    "31": "LABEL_31"
   },
   "initializer_range": 0.02,
   "intermediate_size": 3072,
@@ -71,6 +72,7 @@
     "LABEL_29": 29,
     "LABEL_3": 3,
     "LABEL_30": 30,
+    "LABEL_31": 31,
     "LABEL_4": 4,
     "LABEL_5": 5,
     "LABEL_6": 6,
@@ -90,6 +92,8 @@
   "pooler_size_per_head": 128,
   "pooler_type": "first_token_transform",
   "position_embedding_type": "absolute",
+  "transformers_version": "4.2.2",
   "type_vocab_size": 2,
+  "use_cache": true,
   "vocab_size": 30000
 }
