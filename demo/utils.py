@@ -259,7 +259,11 @@ def postprocess(outputs, model):
         intent_str = intent_str
 
     elif score1.item() >= 0.5 and score1.item() <= 0.6:
-        intent_str = '질문하신 의도가 (' + intent_str + ')이 맞나요?'
+
+        if intent1 ==  'greeting_chat':
+            pass
+        else:
+            intent_str = '질문하신 의도가 (' + intent_str + ')이 맞나요?'
 
     else:
         # intent_str = intent_str + '스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 간단한 인사, 검색)'
