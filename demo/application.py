@@ -28,7 +28,7 @@ import threading
 
 from datetime import datetime
 
-from utils import preprocess, postprocess
+from utils.utils import preprocess, postprocess
 
 ###############
 # 피드백 메모리 #
@@ -293,6 +293,6 @@ def request_incorrect(uid: str) -> dict:
 # .js파일 익스플로에서 코드 적용안될 때 (컨트롤 +쉬프트 + r)
 if __name__ == '__main__':
     feedback_write()
-    app.run(port=8080, host='127.0.0.1', debug=True)
+    # app.run(port=8080, host='127.0.0.1', debug=True)
     # app.run(port=8080, host='0.0.0.0')
-    # app.run(port=5605, host='192.168.0.64')
+    app.run(port=5605, host='192.168.0.64')
