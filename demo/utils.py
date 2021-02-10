@@ -9,7 +9,7 @@ import numpy as np
 from seqeval.metrics import precision_score, recall_score, f1_score  # 개체명 인식 스코어
 from sklearn.metrics import classification_report
 
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, BertForSequenceClassification
 
 import pickle
 
@@ -104,13 +104,6 @@ def get_label(data_path):
     labels = list(indx2label.values())
     return labels
 
-# def get_index2label():
-#     index2label = pickle_read('index2label.pickle')
-#     return index2label
-#
-# def get_label2index():
-#     label2index = pickle_read('label2index.pickle')
-#     return label2index
 
 def load_tokenizer(model_name_or_path):
     return AutoTokenizer.from_pretrained(model_name_or_path)
@@ -225,8 +218,6 @@ def preprocess(utterance):
     else:
         pass
 
-
-
     # 숫자류
     utterance = utterance.replace('1', '0')
     utterance = utterance.replace('2', '0')
@@ -238,7 +229,6 @@ def preprocess(utterance):
     utterance = utterance.replace('8', '0')
     utterance = utterance.replace('9', '0')
 
-
     # 자동차류
     utterance = utterance.replace('쏘나타', '자동차')
     utterance = utterance.replace('아벤떼', '자동차')
@@ -246,30 +236,119 @@ def preprocess(utterance):
 
     return utterance
 
+def postprocess(outputs, model):
+    output_topk5 = outputs.logits.topk(3)
+
+    total_sum = output_topk5.values[0][:].sum()
+
+    score1 = output_topk5.values[0][0].item() / total_sum
+    score2 = output_topk5.values[0][1].item() / total_sum
+    score3 = output_topk5.values[0][2].item() / total_sum
+
+    intent1 = model.config.id2label[output_topk5.indices[0][0].item()]
+    intent2 = model.config.id2label[output_topk5.indices[0][1].item()]
+    intent3 = model.config.id2label[output_topk5.indices[0][2].item()]
+    # print('intent:', intent1, ', ', intent2, ', ', intent3)
+    # print('스코어 :', score1.item(), score2.item(), score3.item())
+
+    intent_candidate_str = '인텐트 후보: ' +  intent1 + ', ' + intent2 + ', ' + intent3
+    score_str = '스코어: ' + str(score1.item()) + ', ' + str(score2.item()) + ', ' + str(score3.item())
+
+    intent_str = intent_str_dic[intent1]
+    if score1.item() > 0.6:
+        intent_str = intent_str
+
+    elif score1.item() >= 0.5 and score1.item() <= 0.6:
+        intent_str = '질문하신 의도가 (' + intent_str + ')이 맞나요?'
+
+    else:
+        # intent_str = intent_str + '스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 간단한 인사, 검색)'
+
+        if intent1 ==  'greeting_chat':
+            pass
+        else:
+            intent_str = intent_str + ', 죄송합니다. 아직 학습되어 있지 않거나, 관련 의도가 없습니다. 스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 잡담, 검색)'
+
+    return intent_str, intent_candidate_str, score_str, intent1, score1
 
 if __name__ == '__main__':
+    device ='cpu'
 
-    pd_data = pd.read_excel('../data/pvot/pvot_dataset_target_high_베이스.xlsx')
+    # model_path = 'beomi/kcbert-base'
+    #
+    # tokenizer   = AutoTokenizer.from_pretrained(model_path)
+    # model       = BertForSequenceClassification.from_pretrained('../model/2021_02_10_12_27')
+    # model.eval()
+    # utterance = '나는 천재다.'
+    #
+    # utterance_pre = preprocess(utterance)
+    # tokens = tokenizer.tokenize(utterance_pre)
+    # print(tokens)
+    # # tokens = tokenizer.encode(utterance_pre)
+    # # print(tokens)
+    #
+    # inputs = tokenizer.encode_plus(utterance_pre,
+    #                                None,
+    #                                pad_to_max_length=True,
+    #                                add_special_tokens=True,
+    #                                return_attention_mask=True,
+    #                                max_length=50,
+    #                                )
+    # ids = inputs["input_ids"]
+    # token_type_ids = inputs["token_type_ids"]
+    # mask = inputs["attention_mask"]
+    #
+    # input_data = {
+    #     'ids': torch.tensor(ids, dtype=torch.long),
+    #     'mask': torch.tensor(mask, dtype=torch.long),
+    #     'token_type_ids': torch.tensor(token_type_ids, dtype=torch.long),
+    #     # 'target': torch.tensor(self.train_csv.iloc[index, 2], dtype=torch.long)
+    #     # 'target': torch.tensor(self.target[index], dtype=torch.long)
+    # }
+    #
+    # input_data['ids'] = input_data['ids'].to(device)
+    # input_data['mask'] = input_data['mask'].to(device)
+    # input_data['token_type_ids'] = input_data['token_type_ids'].to(device)
+    # # input_data['target'] = input_data['target'].to(device)
+    #
+    # input_data['ids'] = input_data['ids'].unsqueeze(0)
+    # input_data['mask'] = input_data['mask'].unsqueeze(0)
+    # input_data['token_type_ids'] = input_data['token_type_ids'].unsqueeze(0)
+    # inputs = {'input_ids': input_data['ids'],
+    #           'token_type_ids': input_data['token_type_ids'],
+    #           'attention_mask': input_data['mask']
+    #           }
+    #
+    # outputs = model(**inputs)
+    #
+    # intent_str, intent_candidate_str, score_str = postprocess(outputs, model)
+    #
+    # print(intent_str)
+    # print(intent_candidate_str)
+    # print(score_str)
+    # bbb = 0
 
-    bb = 0
-    # print(preprocess('우리집 어때?'))
-    # print(preprocess('내일 오전에 보일러 켜줘'))
-    # print(preprocess('내일 오전 10시 10분에 보일러 켜줘'))
-    # print(preprocess('수요일에 보일러 켜줘'))
-    # print(preprocess('문제인이 누구야?'))
-    # print(preprocess('방법 켜줘'))
-
-    results = {
-        # "loss": eval_loss
-    }
-
-    labels = [0, 0, 1, 1, 2, 2, 2]
-    preds = [0, 0, 1, 2, 2, 2, 1]
-    target_names = ['class 0', 'class 1', 'class 2']
-    result = f1_pre_rec(preds, labels, target_names)
-    print(result)
-    # results.update(result)
-
-    # logger.info("***** Eval results *****")
-    # for key in sorted(results.keys()):
-    #     logger.info("  %s = %s", key, str(results[key]))
+    # # pd_data = pd.read_excel('../data/pvot/pvot_dataset_target_high_베이스.xlsx')
+    #
+    #
+    # # print(preprocess('우리집 어때?'))
+    # # print(preprocess('내일 오전에 보일러 켜줘'))
+    # # print(preprocess('내일 오전 10시 10분에 보일러 켜줘'))
+    # # print(preprocess('수요일에 보일러 켜줘'))
+    # # print(preprocess('문제인이 누구야?'))
+    # # print(preprocess('방법 켜줘'))
+    #
+    # results = {
+    #     # "loss": eval_loss
+    # }
+    #
+    # labels = [0, 0, 1, 1, 2, 2, 2]
+    # preds = [0, 0, 1, 2, 2, 2, 1]
+    # target_names = ['class 0', 'class 1', 'class 2']
+    # result = f1_pre_rec(preds, labels, target_names)
+    # print(result)
+    # # results.update(result)
+    #
+    # # logger.info("***** Eval results *****")
+    # # for key in sorted(results.keys()):
+    # #     logger.info("  %s = %s", key, str(results[key]))

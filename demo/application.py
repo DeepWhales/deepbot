@@ -18,8 +18,8 @@ from demo.scenrios import restaurant, travel, dust, weather
 import pickle
 import torch
 
-from transformers import AutoTokenizer
-from transformers import BertForSequenceClassification
+from transformers import AutoTokenizer, BertForSequenceClassification
+
 
 # import pandas as pd
 #
@@ -28,7 +28,7 @@ import threading
 
 from datetime import datetime
 
-from utils import intent_str_dic, preprocess
+from utils import preprocess, postprocess
 
 ###############
 # 피드백 메모리 #
@@ -234,62 +234,18 @@ def request_chat(uid: str, text: str) -> dict:
 
     outputs = model(**inputs)
 
-    inference_value = torch.argmax(outputs.logits)
-    intent = indx2label[inference_value.item()]
+    intent_str, intent_candidate_str, score_str, intent, score = postprocess(outputs, model)
 
-    entity = None
-    # dialogue_cache[uid] = scenario_manager.apply_scenario(intent, entity, text)
-    # return dialogue_cache[uid]
 
-    # print(text)
-    # print(dialogue_cache[uid]['intent'])
-
-    output_topk5 = outputs.logits.topk(3)
-
-    intent1 = indx2label[output_topk5.indices[0][0].item()]
-    # intent2 = indx2label[output_topk5.indices[0][1].item()]
-    # intent3 = indx2label[output_topk5.indices[0][2].item()]
-    # intent = intent1 + ', ' + intent2 + ', ' + intent3
-    intent = intent1
-
-    total_sum = output_topk5.values[0][:].sum()
-
-    score1 = output_topk5.values[0][0].item()/total_sum
-    # score2 = output_topk5.values[0][1].item()/total_sum
-    # score3 = output_topk5.values[0][2].item()/total_sum
-    score1_str = str(score1.item())[0:6]
-    # score2_str = str(score2.item())[0:6]
-    # score3_str = str(score3.item())[0:6]
-    # score_str = score1_str + ', ' + score2_str + ', ' + score3_str
-    score_str = score1_str
-
-    # feedback = {: [], 'intent': [], 'label': [], 'score': []};
-    id_global = uid
-    utterence_global = utterence
-    intent_global = intent
-    label_global = ''
-    score_global = outputs.logits.squeeze()
-    # feedback['id'] = id_global
-    # feedback['utterance'] = utterence_global
-    # feedback['intent'] = intent_global
-    # feedback['score'] = score_global
-    feedback['id'].append(id_global)
-    feedback['text'].append(text_global)
-    feedback['utterance'].append(utterence_global)
-    feedback['intent'].append(intent_global)
-    feedback['score'].append(score_global)
+    feedback['id'].append(uid)
+    feedback['text'].append(text)
+    feedback['utterance'].append(utterence)
+    feedback['intent'].append(intent)
+    feedback['score'].append(score)
     feedback['label'].append(999)
 
-    intent_str =  intent_str_dic[intent]
 
-    if score1.item() > 0.6:
-        intent_str = intent_str
-    elif score1.item() >= 0.5 and score1.item() <= 0.6:
-        intent_str = '질문하신 의도가 (' + intent_str + ')이 맞나요?'
-    else:
-        # intent_str = intent_str + '스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 간단한 인사, 검색)'
-        # intent_str = intent_str + '죄송합니다. 아직 학습되어 있지 않거나, 관련 의도가 없습니다.'
-        intent_str = intent_str + '죄송합니다. 아직 학습되어 있지 않거나, 관련 의도가 없습니다.'
+    entity = None
 
     dialogue_cache = {'input': text, 'intent': intent_str, 'entity': entity, 'state':'FALLBACK', 'answer': None, 'score': score_str}
 
