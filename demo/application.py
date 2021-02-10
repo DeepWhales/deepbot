@@ -202,7 +202,7 @@ def request_chat(uid: str, text: str) -> dict:
             pad_to_max_length=True,
             add_special_tokens=True,
             return_attention_mask=True,
-            max_length=max_seq_len,
+            max_length = max_seq_len,
     )
 
     ids = inputs["input_ids"]
@@ -282,12 +282,14 @@ def request_chat(uid: str, text: str) -> dict:
 
     intent_str =  intent_str_dic[intent]
 
-    if score1.item() > 0.7:
+    if score1.item() > 0.6:
         intent_str = intent_str
-    elif score1.item() >= 0.55 and score1.item() <= 0.7:
+    elif score1.item() >= 0.5 and score1.item() <= 0.6:
         intent_str = '질문하신 의도가 (' + intent_str + ')이 맞나요?'
     else:
-        intent_str = intent_str + '스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 간단한 인사, 검색)'
+        # intent_str = intent_str + '스마트홈에 관련된 질문을 부탁드립니다. (난방, 주차위치, 가스 밸브, 조명, 방범, 환기, 날씨, 간단한 인사, 검색)'
+        # intent_str = intent_str + '죄송합니다. 아직 학습되어 있지 않거나, 관련 의도가 없습니다.'
+        intent_str = intent_str + '죄송합니다. 아직 학습되어 있지 않거나, 관련 의도가 없습니다.'
 
     dialogue_cache = {'input': text, 'intent': intent_str, 'entity': entity, 'state':'FALLBACK', 'answer': None, 'score': score_str}
 

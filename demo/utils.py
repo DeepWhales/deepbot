@@ -37,7 +37,7 @@ ner = Pororo(task="ner", lang="ko")
 from kocrawl.spell import SpellCrawler
 
 
-intent_str_dic = {'elevator-on'                     : '엘리베이터 호출',
+intent_str_dic = {'elevator-call'                     : '엘리베이터 호출',
                 'gas-off'                       : '가스 밸브 OFF',
                 'gas-on'                        : '가스 밸브 ON',
 
@@ -72,9 +72,8 @@ intent_str_dic = {'elevator-on'                     : '엘리베이터 호출',
                 'vent-up'       : '환기 UP',
 
                 'weather'           : '날씨',
-                'greeting'          : '인사',
+                'greeting_chat'     : '인사_잡담',
                 'search'            : '검색',
-                'chat'              : '잡담',
               }
 
 
@@ -249,6 +248,10 @@ def preprocess(utterance):
 
 
 if __name__ == '__main__':
+
+    pd_data = pd.read_excel('../data/pvot/pvot_dataset_target_high_베이스.xlsx')
+
+    bb = 0
     # print(preprocess('우리집 어때?'))
     # print(preprocess('내일 오전에 보일러 켜줘'))
     # print(preprocess('내일 오전 10시 10분에 보일러 켜줘'))
